@@ -1,0 +1,32 @@
+html, body, #map {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+#lbutton {
+  position: fixed;
+  top: 20px;
+  right: 200px;
+}
+#ltree {
+  position: fixed;
+  top: 60px;
+  right: 119px;
+  width: 150px;
+}
+#ibutton {
+  position: fixed;
+  top: 20px;
+  right: 100px;
+}
+#itree {
+  position: fixed;
+  top: 60px;
+  right: 26px;
+  width: 150px;
+}
+#clickme {
+  position: fixed;
+  top: 20px;
+  right: 300px;
+}

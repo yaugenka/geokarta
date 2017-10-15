@@ -1,0 +1,2 @@
+create or replace view country_boundary as select id,name,name_be,geom from country
+create or replace view country_label as select id,name,name_be,label from country

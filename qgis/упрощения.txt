@@ -1,0 +1,49 @@
+-- упростить значени¤ адреса
+update s set region=replace(region,' область','') where region is not null;
+update s set district=replace(district,' район','') where district is not null;
+update s set council=regexp_replace(council,' сельский .овет','') where council~'сельский';
+
+-- упростить типы нп
+update s set type='г' where type='город';
+update s set type='гп' where type='городской посёлок';
+update s set type='рп' where type='рабочий посёлок';
+update s set type='кп' where type='курортный посёлок';
+update s set type='аг' where type='агрогородок';
+update s set type='д' where type='деревня';
+update s set type='п' where type='посёлок';
+update s set type='х' where type='хутор';
+
+-- замена null на ''
+update s set
+type=case when type is null then '' else type end,
+alt_name=case when alt_name is null then '' else alt_name end,
+name_be=case when name_be is null then '' else name_be end,
+alt_name_be=case when alt_name_be is null then '' else alt_name_be end,
+region=case when region is null then '' else region end,
+district=case when district is null then '' else district end,
+council=case when council is null then '' else council end;
+--------------------------------------
+-- упростить значени¤ адреса
+update d set region=replace(region,' область','') where region is not null;
+update d set district=replace(district,' район','') where district is not null;
+update d set council=regexp_replace(council,' сельский .овет','') where council~'сельский';
+
+-- упростить типы нп
+update d set type='г' where type='город';
+update d set type='гп' where type='городской посёлок';
+update d set type='рп' where type='рабочий посёлок';
+update d set type='кп' where type='курортный посёлок';
+update d set type='аг' where type='агрогородок';
+update d set type='д' where type='деревня';
+update d set type='п' where type='посёлок';
+update d set type='х' where type='хутор';
+
+-- замена null на ''
+update d set
+type=case when type is null then '' else type end,
+alt_name=case when alt_name is null then '' else alt_name end,
+name_be=case when name_be is null then '' else name_be end,
+alt_name_be=case when alt_name_be is null then '' else alt_name_be end,
+region=case when region is null then '' else region end,
+district=case when district is null then '' else district end,
+council=case when council is null then '' else council end;

@@ -1,0 +1,70 @@
+[out:xml];
+((
+//ways
+);>;
+//nodes and relations
+);
+out meta;
+
+[out:xml];
+area[name="Беларусь"]->.a;
+(
+rel(area.a)[place][landuse=residential];
+(way(r:"outer");>;);
+);
+out meta;
+
+
+[date:"2015-05-06T00:00:00Z"];
+( node({{bbox}})[place]; <; >; );
+out meta;
+
+[out:csv(::id,name,"name:ru","name:be")];
+area[name="Беларусь"]->.a;
+node(area.a)(newer:"2017-09-15T00:00:00Z")[place~"city|town|village|hamlet|isolated_dwelling"];
+out meta geom;
+
+[out:csv(::id,name,"name:ru","name:be")];
+area[name="Беларусь"]->.a;
+node(area.a)[place~"city|town|village|hamlet|isolated_dwelling|state"];
+out meta geom;
+
+rel(area.a)[admin_level][!place];
+
+[out:json];
+area[name="Беларусь"]->.a;
+(
+rel(area.a)
+  [place~"city|town|village|hamlet|isolated_dwelling"];
+way(area.a)
+  [place~"city|town|village|hamlet|isolated_dwelling"];
+);
+out geom;
+
+[out:json];
+area[name="Минская область"]->.a;
+(
+node(area.a)
+  ["abandoned:place"~"city|town|village|hamlet|isolated_dwelling"];
+);
+out geom;
+
+[out:json];
+area[name="Минская область"]->.a;
+(
+node(area.a)
+  ["abandoned:place"~"city|town|village|hamlet|isolated_dwelling"]
+  [place!=locality];
+node(area.a)
+  ["abandoned:place"~"city|town|village|hamlet|isolated_dwelling"]
+  [place!~"."];
+);
+out geom;
+
+[out:json];
+area[name="Беларусь"]->.a;
+(
+rel(area.a)
+  [admin_level=10]
+);
+out geom;
