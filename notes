@@ -1,0 +1,22 @@
+center: ol.proj.transform([29.686, 52.929], 'EPSG:4326', 'EPSG:3857')
+
+style: function(feature, resolution) {
+  return [new ol.style.Style({
+    stroke: new ol.style.Stroke({
+      color: 'blue',
+      width: 1
+    }),
+    text: new ol.style.Text({
+      font: '50px sans-serif',
+      text: (feature.get('id')).toString(),
+      fill: new ol.style.Fill({
+        color: 'grey'
+      })
+    })
+  })];
+}
+
+alter table country drop column id, drop column name_be;
+update country set name='My Polygon',
+geom=ST_Transform(ST_GeomFromText('polygon((-10e6 6e6,10e6 6e6,10e6 -6e6,-10e6 -6e6,-10e6 6e6))',3857),4326),
+label=ST_Transform(ST_GeomFromText('point(0 3e6)',3857),4326)

@@ -1,0 +1,33 @@
+1. скачиваем дамп Беларуси с http://gis-lab.info/projects/osm_dump/
+http://data.gis-lab.info/osm_dump/dump/latest/BY.osm.pbf
+
+2. создаем базу osm и установливаем расширения
+CREATE EXTENSION postgis;
+CREATE EXTENSION hstore;
+
+3. накатить скрипт шаблона импорта через консоль psql или инструмент запросов
+- в pgadmin3 выбрать базу и запустить консоль psql
+- задать русскую локаль: \! chcp 1251
+- выполнить скрипт: \i 'c:/Program Files/osmosis/script/pgsimple_schema_0.6.sql'
+
+4. из обычной командрой строки загрузить данные с pbf с помощью osmosis в базу osm
+osmosis --read-pbf file=F:\gsdata\www\qgis\BY.osm.pbf --log-progress --write-pgsimp database=osm user=postgres password=1
+
+---
+пакетный откат
+1. скачать сырые данные (osm) из overpass turbo
+2. см. п.2 выше
+3. см. п.3 выше
+4. из обычной командрой строки загрузить данные с osm с помощью osmosis в базу
+osmosis --read-xml file=F:\gsdata\www\qgis\export.osm --log-progress --write-pgsimp database=osm2 user=postgres password=1
+5. обновить данные запросом
+update node_tags a set v=(select v from node_tags b where b.node_id=a.node_id and k='name:ru') where k='name';
+update way_tags a set v=(select v from way_tags b where b.way_id=a.way_id and k='name:ru') where k='name';
+update relation_tags a set v=(select v from relation_tags b where b.relation_id=a.relation_id and k='name:ru') where k='name';
+6. экспортировать базу в файл osm через обычную командную строку
+osmosis --read-pgsimp database=osm2 user=postgres password=1 outPipe.0=pg --dataset-dump inPipe.0=pg outPipe.0=dd --write-xml inPipe.0=dd file=F:\gsdata\www\qgis\export2.osm
+7. создать диффайл
+osmosis --read-xml file=F:\gsdata\www\qgis\export2.osm --read-xml file=F:\gsdata\www\qgis\export.osm --derive-change --write-xml-change file=F:\gsdata\www\qgis\exportdif.osc"
+8. загрузить файлы export2.osm и exportdif.osc в josm
+9. объединить слои в export2.osm
+10. отправить изменения на сервер в несколько этапов по 

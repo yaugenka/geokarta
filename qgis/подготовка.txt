@@ -1,0 +1,20 @@
+--1. создаем таблицу nodes2 и копинуем в нее id и geom из таблицы nodes и сагрегированные в hstore тэги из таблицы node_tags
+drop table if exists nodes2;
+CREATE TABLE nodes2 (id bigint NOT NULL,tags hstore,geom geometry(Point,4326));
+insert into nodes2 select id, (select hstore(array_agg(array[k,v])) from node_tags where nodes.id=node_tags.node_id), geom from nodes;
+create index nodes2_index on nodes2 using gist (tags, geom);
+
+--2. создаем таблицу ways2 и копируе в нее id из таблицы ways, сагрегированные в тип hstore тэги из таблицы way_tags и сагрегированные в линию точки из way_nodes
+drop table if exists ways2;
+CREATE TABLE ways2 (id bigint NOT NULL, tags hstore, geom geometry(Linestring,4326));
+insert into ways2 select id, (select hstore(array_agg(array[k,v])) from way_tags where way_tags.way_id=ways.id), 
+(select st_makeline(geom order by sequence_id) from way_nodes inner join nodes on way_nodes.node_id=nodes.id where way_nodes.way_id=ways.id)
+from ways;
+create index ways2_index on ways2 using gist (tags, geom);
+
+--3. создать таблицу relations2 и копируем в нее id из таблицы relations и сагрегированные в тип hstore тэги из таблицы relation_tags
+drop table if exists relations2;
+CREATE TABLE relations2 (id bigint NOT NULL, tags hstore);
+insert into relations2 select id, (select hstore(array_agg(array[k,v])) from relation_tags where relation_tags.relation_id=relations.id) 
+from relations;
+create index relations2_index on relations2 using gist (tags);

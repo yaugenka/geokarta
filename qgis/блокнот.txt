@@ -1,0 +1,111 @@
+--найти селькие жилые зоны
+select * from ways2 where tags@>'landuse=>residential' and not tags?'residential'
+and st_isclosed(geom) and st_covers((select geom from country where id=59065),geom)
+and not exists (select * from s where type='г' and (st_covers(s.geom,ways2.geom) or st_crosses(s.geom,ways2.geom)) limit 1)
+
+--найти чего нет на osm
+with t as (select *, name||' '||district from f where ex=1 and map=1 and
+(not exists (select * from s where (f.name=s.name or f.name=any(regexp_split_to_array(s.alt_name,';'))) and f.district=s.district and (f.council=s.council or s.council=''))
+and not exists (select * from d where (f.name=d.name or f.name=any(regexp_split_to_array(d.alt_name,';'))) and f.district=d.district and (f.council=d.council or d.council='')))
+order by region, district, council, name)
+select * from t where not exists (select * from s where (
+((case when t.name~'ё' then replace(t.name,'ё','е') when t.name~'Ё' then replace(t.name,'Ё','Е') else t.name end)=
+(case when s.name~'ё' then replace(s.name,'ё','е') when s.name~'Ё' then replace(s.name,'Ё','Е') else s.name end) or
+(case when t.name~'ё' then replace(t.name,'ё','е') when t.name~'Ё' then replace(t.name,'Ё','Е') else t.name end)=
+any(regexp_split_to_array((case when s.alt_name~'ё' then replace(s.alt_name,'ё','е') when s.alt_name~'Ё' then replace(s.alt_name,'Ё','Е') else s.alt_name end),';'))) and
+(case when t.district~'ё' then replace(t.district,'ё','е') when t.district~'Ё' then replace(t.district,'Ё','Е') else t.district end)=
+(case when s.district~'ё' then replace(s.district,'ё','е') when s.district~'Ё' then replace(s.district,'Ё','Е') else s.district end) and
+((case when t.council~'ё' then replace(t.council,'ё','е') when t.council~'Ё' then replace(t.council,'Ё','Е') else t.council end)=
+(case when s.council~'ё' then replace(s.council,'ё','е') when s.council~'Ё' then replace(s.council,'Ё','Е') else s.council end) or
+s.council=''))) and
+not exists (select * from d where (
+((case when t.name~'ё' then replace(t.name,'ё','е') when t.name~'Ё' then replace(t.name,'Ё','Е') else t.name end)=
+(case when d.name~'ё' then replace(d.name,'ё','е') when d.name~'Ё' then replace(d.name,'Ё','Е') else d.name end) or
+(case when t.name~'ё' then replace(t.name,'ё','е') when t.name~'Ё' then replace(t.name,'Ё','Е') else t.name end)=
+any(regexp_split_to_array((case when d.alt_name~'ё' then replace(d.alt_name,'ё','е') when d.alt_name~'Ё' then replace(d.alt_name,'Ё','Е') else d.alt_name end),';'))) and
+(case when t.district~'ё' then replace(t.district,'ё','е') when t.district~'Ё' then replace(t.district,'Ё','Е') else t.district end)=
+(case when d.district~'ё' then replace(d.district,'ё','е') when d.district~'Ё' then replace(d.district,'Ё','Е') else d.district end) and
+((case when t.council~'ё' then replace(t.council,'ё','е') when t.council~'Ё' then replace(t.council,'Ё','Е') else t.council end)=
+(case when d.council~'ё' then replace(d.council,'ё','е') when d.council~'Ё' then replace(d.council,'Ё','Е') else d.council end) or
+d.council='')))
+
+select * from r where name~'Нехачёво'
+order by name, region, district, council
+
+--перенос landuse=residential из отношения в линию
+with t as (select 'rel('||a.id||');', a.tags->'place', a.tags, 'way('||c.id||');', c.tags, c.geom from relations2 a inner join relation_members b on a.id=b.relation_id inner join ways2 c on b.member_id=c.id
+where a.tags?'place' and a.tags@>'landuse=>residential' and b.member_role='outer' and st_isclosed(c.geom)
+order by a.tags->'place')
+select * from t where st_covers((select geom from country where id=59065),geom)
+
+--найти все что вне Беларуси
+with 
+t as (select a.id, a.tags, b.member_role, st_polygonize(c.geom) as geom from relations2 as a 
+inner join relation_members as b on a.id=b.relation_id
+inner join ways2 as c on b.member_id=c.id group by a.id, a.tags, b.member_role),
+t2 as (select id, tags, st_makepolygon(st_exteriorring((st_dump(geom)).geom)) as geom from t where member_role='outer'),
+t3 as (select id, tags, (st_dump(geom)).geom as geom from t where member_role='inner'),
+t4 as (select id, tags, st_makepolygon(st_exteriorring(t2.geom),array(select st_exteriorring(t3.geom)
+from t3 where t2.id=t3.id and st_covers(t2.geom,t3.geom))) as geom from t2),
+t5 as (select id, tags, st_collect(geom) as geom from t4 group by id, tags)
+select * from t5 where not st_covers((select geom from country where id=59065),geom)
+and not st_overlaps((select geom from country where id=59065),geom)
+limit 10
+
+select * from relations2 as a where not st_covers((select geom from country where id=59065),
+(select st_collect(c.geom) from relation_members as b inner join ways2 as c on  b.member_id=c.id where a.id=b.relation_id))
+
+select id, tags->'name', tags->'name:ru', tags->'name:be', tags->'district' from nodes2
+where tags?'name' and tags?'name:ru' and tags->'name'!=tags->'name:ru'
+and st_covers((select geom from country where id='59065'),nodes2.geom)
+and not tags?'public_transport' and not tags@>'highway=>bus_stop'
+
+--найти нп с границими типа линия
+select id, name, (select count(*) from boundaries as b where et='w' and b.region=a.name)
+from boundaries as a where admin_level=4 and place is null order by name
+
+select id, name, (select count(*) from boundaries as b where et='w' and b.district=a.name)
+from boundaries as a where region='Могилёвская область' and place is null order by name
+
+select 'w'||id, name from boundaries where et='w' and district='Горецкий район'
+
+select 'w'||id, * from s where et='w';
+
+-- найти чего нет в реестре
+with t as (select *, name||' '||district from s where 
+not exists (select * from f where ex=1 and map=1 and (f.name=s.name or f.name=any(regexp_split_to_array(s.alt_name,';'))) and
+f.district=s.district and (f.council=s.council or s.council='') and (f.type=s.type or s.type=''))
+order by region, district, council, name)
+select * from t where not exists (select * from f where
+((case when f.name~'ё' then replace(f.name,'ё','е') when f.name~'Ё' then replace(f.name,'Ё','Е') else f.name end)=
+(case when t.name~'ё' then replace(t.name,'ё','е') when t.name~'Ё' then replace(t.name,'Ё','Е') else t.name end) or
+(case when f.name~'ё' then replace(f.name,'ё','е') when f.name~'Ё' then replace(f.name,'Ё','Е') else f.name end)=
+any(regexp_split_to_array((case when t.alt_name~'ё' then replace(t.alt_name,'ё','е') when t.alt_name~'Ё' then replace(t.alt_name,'Ё','Е') else t.alt_name end),';'))) and
+(case when f.district~'ё' then replace(f.district,'ё','е') when f.district~'Ё' then replace(f.district,'Ё','Е') else f.district end)=
+(case when t.district~'ё' then replace(t.district,'ё','е') when t.district~'Ё' then replace(t.district,'Ё','Е') else t.district end) and
+((case when f.council~'ё' then replace(f.council,'ё','е') when f.council~'Ё' then replace(f.council,'Ё','Е') else f.council end)=
+(case when t.council~'ё' then replace(t.council,'ё','е') when t.council~'Ё' then replace(t.council,'Ё','Е') else t.council end) or
+t.council=''))
+
+--найти нп с повторяющимися названиями
+select * from s as a where exists (select * from s as b where a.id!=b.id
+and (a.name=b.name or a.name=any(regexp_split_to_array(b.alt_name,';')) or b.name=any(regexp_split_to_array(a.alt_name,';')))
+and a.district=b.district and (a.council=b.council or a.council='' or b.council=''))
+order by district, name, council
+
+--найти на osm соответствующие реестру нп
+with t as (select s.id, et, s.type, s.name, s.district, s.council, f.council as council2, f.name as name2, f.type as type2, admin_level
+from s inner join f on
+((case when f.name~'ё' then replace(f.name,'ё','е') when f.name~'Ё' then replace(f.name,'Ё','Е') else f.name end)=
+(case when s.name~'ё' then replace(s.name,'ё','е') when s.name~'Ё' then replace(s.name,'Ё','Е') else s.name end) or
+(case when f.name~'ё' then replace(f.name,'ё','е') when f.name~'Ё' then replace(f.name,'Ё','Е') else f.name end)=
+any(regexp_split_to_array((case when s.alt_name~'ё' then replace(s.alt_name,'ё','е') when s.alt_name~'Ё' then replace(s.alt_name,'Ё','Е') else s.alt_name end),';'))) and
+(case when f.district~'ё' then replace(f.district,'ё','е') when f.district~'Ё' then replace(f.district,'Ё','Е') else f.district end)=
+(case when s.district~'ё' then replace(s.district,'ё','е') when s.district~'Ё' then replace(s.district,'Ё','Е') else s.district end) and
+((case when f.council~'ё' then replace(f.council,'ё','е') when f.council~'Ё' then replace(f.council,'Ё','Е') else f.council end)=
+(case when s.council~'ё' then replace(s.council,'ё','е') when s.council~'Ё' then replace(s.council,'Ё','Е') else s.council end) or
+s.council='') and
+(s.type=f.type or s.type='')
+and f.ex=1 and f.map=1
+order by district, council, name)
+select 'rel('||id||');', * from t where type2='г' and type=''
