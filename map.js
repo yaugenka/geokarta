@@ -111,6 +111,9 @@ var itree = [{
   title: 'MapBox',
   key: 'mapboxsat'
 }, {
+  title: 'Яндекс',
+  key: 'yandexsat'
+}, {
   title: 'ArcGIS',
   key: 'arcgissat'
 }, {
@@ -123,25 +126,32 @@ $("#itree").fancytree({
   checkbox: "radio",
   selectMode: 1,
   icon: false,
-  activate: function(e, data) {
-    var node = data.node;
-    node.setSelected();
-  },
+	click: function(e,data){
+		if (data.targetType == 'title')
+			data.node.setSelected();
+		else if (data.targetType == 'checkbox')
+			if (data.node.isSelected())
+				return false;
+	},
   select: function(e, data) {
     var node = data.node;
-    if (node.key != 'none') {
-      if (!node.isSelected()) {
-        map.removeLayer(window[node.key]);
-      } else {
-        var layergroup = map.getLayerGroup();
-        var layers = map.getLayers();
-        layers.insertAt(0, window[node.key]);
-        layergroup.setLayers(layers);
-        map.setLayerGroup(layergroup);
-      }
-    }
+		if (!node.isSelected()){
+			node.setActive(false);
+			if (node.key != 'none')
+				map.removeLayer(window[node.key]);
+		}
+		else {
+			node.setActive();
+			if (node.key != 'none'){
+				var layergroup = map.getLayerGroup();
+				var layers = map.getLayers();
+				layers.insertAt(0, window[node.key]);
+				layergroup.setLayers(layers);
+				map.setLayerGroup(layergroup);
+			}
+		}
   }
 });
 
 $("#ltree").fancytree('getTree').getNodeByKey('country').setSelected();
-$("#itree").fancytree('getTree').getNodeByKey('mapboxsat').setActive();
+$("#itree").fancytree('getTree').getNodeByKey('mapboxsat').setSelected();

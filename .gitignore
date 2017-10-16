@@ -1,0 +1,11 @@
+
+*.zip
+*.pbf
+*.meta
+*.osm
+*.osc
+*.csv
+*.xlsx
+qgis/реестр гкгц.txt
+qgis/реестр кадастра.txt
+qgis/сравнение реестров.txt

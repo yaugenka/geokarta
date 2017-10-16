@@ -1,3 +1,16 @@
+var yandexsat = new ol.layer.Tile({
+  source: new ol.source.XYZ({
+		attributions: [new ol.Attribution({
+      html: '&copy; <a href="https://yandex.ru/legal/maps_termsofuse/?lang=ru">Яндекс</a>'
+    })],
+    url: 'https://sat0{1-4}.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}',
+    projection: 'EPSG:3395',
+    tileGrid: ol.tilegrid.createXYZ({
+      extent: [-20037508.342789244, -20037508.342789244, 20037508.342789244, 20037508.342789244]
+    })
+  })
+});
+
 var mapboxsat = new ol.layer.Tile({
   title: 'MapBox',
   source: new ol.source.XYZ({
