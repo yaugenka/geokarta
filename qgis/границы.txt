@@ -11,7 +11,7 @@ t2 as (select id, tags, (st_dump(geom)).geom as geom from t where member_role='o
 t3 as (select id, tags, (st_dump(geom)).geom as geom from t where member_role='inner'),
 t4 as (select id, tags, st_makepolygon(st_boundary(t2.geom), array(select st_boundary(t3.geom) from t3
 where st_covers(t2.geom,t3.geom))) as geom from t2)
-insert into country (select a.id, 'r', a.tags->'name:prefix', a.tags->'name', a.tags->'alt_name',
+insert into country (select a.id, 'r', a.tags->'name:prefix', a.tags->'name', a.tags->'alt_name:ru',
 a.tags->'name:be', a.tags->'alt_name:be', a.tags->'addr:region', a.tags->'addr:district', a.tags->'addr:subdistrict',
 a.tags->'place', (a.tags->'admin_level')::int, (f.tags->'admin_level')::int, c.geom, a.geom from t4 as a
 left join (select * from relation_members where member_role='label') as b on a.id=b.relation_id
@@ -40,7 +40,7 @@ left join (select * from relation_members where member_role='label') as b on a.i
 left join nodes2 as c on b.member_id=c.id
 left join (select * from relation_members where member_role='admin_centre') as d on b.member_id=d.member_id
 left join relations2 as f on d.relation_id=f.id group by a.id, a.tags, label, a.geom)
-insert into regions (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name',
+insert into regions (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name:ru',
 tags->'name:be', tags->'alt_name:be', tags->'addr:region', tags->'addr:district', tags->'addr:subdistrict',
 tags->'place', (tags->'admin_level')::int, admin_centre, label, geom from t6);
 create index regions_index on regions using gist (geom);
@@ -65,7 +65,7 @@ left join (select * from relation_members where member_role='label') as b on a.i
 left join nodes2 as c on b.member_id=c.id
 left join (select * from relation_members where member_role='admin_centre') as d on b.member_id=d.member_id
 left join relations2 as f on d.relation_id=f.id group by a.id, a.tags, label, a.geom)
-insert into districts (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name',
+insert into districts (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name:ru',
 tags->'name:be', tags->'alt_name:be', tags->'addr:region', tags->'addr:district', tags->'addr:subdistrict',
 tags->'place', (tags->'admin_level')::int, admin_centre, label, geom from t6);
 create index districts_index on districts using gist (geom);
@@ -90,7 +90,7 @@ left join (select * from relation_members where member_role='label') as b on a.i
 left join nodes2 as c on b.member_id=c.id
 left join (select * from relation_members where member_role='admin_centre') as d on b.member_id=d.member_id
 left join relations2 as f on d.relation_id=f.id group by a.id, a.tags, label, a.geom)
-insert into councils (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name',
+insert into councils (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name:ru',
 tags->'name:be', tags->'alt_name:be', tags->'addr:region', tags->'addr:district', tags->'addr:subdistrict',
 tags->'place', (tags->'admin_level')::int, admin_centre, label, geom from t6);
 create index councils_index on councils using gist (geom);
@@ -116,11 +116,11 @@ left join (select * from relation_members where member_role='label') as b on a.i
 left join nodes2 as c on b.member_id=c.id
 left join (select * from relation_members where member_role='admin_centre') as d on b.member_id=d.member_id
 left join relations2 as f on d.relation_id=f.id group by a.id, a.tags, label, a.geom)
-insert into rurals (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name',
+insert into rurals (select id, 'r', tags->'name:prefix', tags->'name', tags->'alt_name:ru',
 tags->'name:be', tags->'alt_name:be', tags->'addr:region', tags->'addr:district', tags->'addr:subdistrict',
 tags->'place', (tags->'admin_level')::int, admin_centre, label, geom from t6);
 
-insert into rurals (select id, 'w', tags->'name:prefix', tags->'name', tags->'alt_name', tags->'name:be', tags->'alt_name:be',
+insert into rurals (select id, 'w', tags->'name:prefix', tags->'name', tags->'alt_name:ru', tags->'name:be', tags->'alt_name:be',
 tags->'addr:region', tags->'addr:district', tags->'addr:subdistrict', tags->'place', (tags->'admin_level')::int, null, null,
 st_makepolygon(geom) from ways2 where tags?'place' and tags->'place' in ('city','town','village','hamlet','isolated_dwelling') 
 and st_covers((select geom from country where id='59065'),st_makepolygon(geom)));
@@ -128,14 +128,16 @@ and st_covers((select geom from country where id='59065'),st_makepolygon(geom)))
 create index rurals_index on rurals using gist (geom);
 
 --6. урочища
-drop table if exists d;
-create table d (id bigint NOT NULL, type text, name text, alt_name text, name_be text, alt_name_be text,
-region text, district text, council text, place text, geom geometry(Geometry,4326));
-insert into d (select id, tags->'name:prefix', tags->'name', tags->'alt_name', tags->'name:be', tags->'alt_name:be',
-tags->'addr:region', tags->'addr:district', tags->'addr:subdistrict', tags->'place', geom from nodes2 
-where tags?'place' and tags->'abandoned:place' in ('city','town','village','hamlet','isolated_dwelling') 
+drop table if exists localities;
+create table localities (id bigint NOT NULL, et text, type text, name text, alt_name text, name_be text, alt_name_be text,
+region text, district text, council text, place text, admin_level int, admin_centre int,
+label geometry(Geometry,4326), geom geometry(Geometry,4326));
+insert into localities (select id, 'n', tags->'name:prefix', tags->'name', tags->'alt_name:ru', tags->'name:be', tags->'alt_name:be',
+tags->'addr:region', tags->'addr:district', tags->'addr:subdistrict', tags->'place', null, null,
+geom, null
+from nodes2 where tags?'place' and tags->'abandoned:place' in ('city','town','village','hamlet','isolated_dwelling') 
 and st_covers((select geom from country where id='59065'),nodes2.geom));
-create index d_index on d using gist (geom);
+create index localities_index on localities using gist (label);
 
 --7. все населенные пункты
 drop table if exists s;
@@ -159,3 +161,32 @@ insert into boundaries (select * from districts);
 insert into boundaries (select * from councils);
 insert into boundaries (select * from rurals);
 create index boundaries_index on boundaries using gist (geom);
+
+--9. дачи
+drop table if exists allotments;
+create table allotments (id bigint NOT NULL, et text, name text, alt_name text, name_be text, alt_name_be text,
+label geometry(Geometry,4326), geom geometry(Geometry,4326));
+with 
+t as (select a.id, a.tags, b.member_role, st_polygonize(c.geom) as geom from relations2 as a 
+inner join relation_members as b on a.id=b.relation_id
+inner join ways2 as c on b.member_id=c.id where a.tags@>'landuse=>allotments' group by a.id, a.tags, b.member_role),
+t2 as (select id, tags, st_makepolygon(st_exteriorring((st_dump(geom)).geom)) as geom from t where member_role='outer'),
+t3 as (select id, tags, (st_dump(geom)).geom as geom from t where member_role='inner'),
+t4 as (select id, tags, st_makepolygon(st_exteriorring(t2.geom),array(select st_exteriorring(t3.geom)
+from t3 where t2.id=t3.id and st_covers(t2.geom,t3.geom))) as geom from t2),
+t5 as (select id, tags, st_collect(geom) as geom from t4 where st_covers((select geom from country where id=59065),t4.geom)
+and (t4.tags?'name' or not exists (select * from s where st_covers(s.geom,t4.geom) or st_crosses(s.geom,t4.geom)))
+group by id, tags)
+insert into allotments (select id, 'r', tags->'name', tags->'alt_name:ru', tags->'name:be', tags->'alt_name:be', null, geom from t5);
+
+insert into allotments (select id, 'w', tags->'name', tags->'alt_name:ru', tags->'name:be', tags->'alt_name:be', null,
+st_makepolygon(geom) from ways2 a where tags@>'landuse=>allotments'
+and st_covers((select geom from country where id=59065),a.geom)
+and (tags?'name' or not exists (select * from s where st_covers(s.geom,a.geom) or st_crosses(s.geom,a.geom))));
+
+insert into allotments (select id, 'n', tags->'name', tags->'alt_name:ru', tags->'name:be', tags->'alt_name:be', geom, null
+from nodes2 a where tags@>'place=>allotments'
+and st_covers((select geom from country where id=59065),a.geom)
+and exists (select * from allotments b where b.name is null and b.et~'w|r' and st_covers(b.geom,a.geom)));
+
+create index allotments_index on allotments using gist (geom);

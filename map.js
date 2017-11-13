@@ -22,26 +22,37 @@ $('#ibutton').click(function() {
 });
 
 var ltree = [{
-  title: 'Boundaries',
+  title: 'Админ. деление',
   key: 'boundaries',
   folder: true,
   expanded: true,
   children: [{
-    title: 'Country',
+    title: 'Страна',
     key: 'country'
   }, {
-    title: 'Regions',
+    title: 'Области и стол.',
     key: 'regions'
   }, {
-    title: 'Districts',
+    title: 'Районы и гоп',
     key: 'districts'
   }, {
-    title: 'Councils',
+    title: 'Сельсоветы и грп',
     key: 'councils'
   }, {
-    title: 'Settlements',
+    title: 'Населенные пункты',
     key: 'settlements'
+  }, {
+    title: 'Подписи нп',
+    key: 'labels'
   }]
+},{
+  title: 'Урочища',
+  key: 'localities',
+  folder: true
+},{
+  title: 'Дачи',
+  key: 'allotments',
+  folder: true
 }];
 
 var objects = {};
@@ -74,7 +85,9 @@ $("#ltree").fancytree({
           }
         });
       }
-			boundaries.changed();
+			map.getLayers().forEach(function(e){
+				e.changed();
+			});
     }
   },
   select: function(e, data) {
@@ -98,21 +111,20 @@ $("#ltree").fancytree({
           map.removeLayer(window[node.getParent().key]);
         }
       }
-			boundaries.changed();
+			map.getLayers().forEach(function(e){
+				e.changed();
+			});
     }
   }
 });
 
 var itree = [{
-  title: 'None',
+  title: 'Не задано',
   selected: true,
   key: 'none'
 }, {
   title: 'MapBox',
   key: 'mapboxsat'
-}, {
-  title: 'Яндекс',
-  key: 'yandexsat'
 }, {
   title: 'ArcGIS',
   key: 'arcgissat'
@@ -150,8 +162,11 @@ $("#itree").fancytree({
 				map.setLayerGroup(layergroup);
 			}
 		}
+		map.getLayers().forEach(function(e){
+			e.changed();
+		});
   }
 });
 
-$("#ltree").fancytree('getTree').getNodeByKey('country').setSelected();
+//$("#ltree").fancytree('getTree').getNodeByKey('country').setSelected();
 $("#itree").fancytree('getTree').getNodeByKey('mapboxsat').setSelected();

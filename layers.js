@@ -1,16 +1,3 @@
-var yandexsat = new ol.layer.Tile({
-  source: new ol.source.XYZ({
-		attributions: [new ol.Attribution({
-      html: '&copy; <a href="https://yandex.ru/legal/maps_termsofuse/?lang=ru">Яндекс</a>'
-    })],
-    url: 'https://sat0{1-4}.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}',
-    projection: 'EPSG:3395',
-    tileGrid: ol.tilegrid.createXYZ({
-      extent: [-20037508.342789244, -20037508.342789244, 20037508.342789244, 20037508.342789244]
-    })
-  })
-});
-
 var mapboxsat = new ol.layer.Tile({
   title: 'MapBox',
   source: new ol.source.XYZ({
@@ -51,4 +38,26 @@ var boundaries = new ol.layer.Vector({
     format: new ol.format.WFS()
   }),
 	style: style_boundaries
+});
+
+var localities = new ol.layer.Vector({
+  title: 'localities',
+  source: new ol.source.Vector({
+    url: 'http://localhost:8080/geoserver/wfs?service=WFS&' +
+      'version=2.0.0&request=GetFeature&typeNames=by:localities&' +
+      'outputFormat=GML3',
+    format: new ol.format.WFS()
+  }),
+	style: style_localities
+});
+
+var allotments = new ol.layer.Vector({
+  title: 'allotments',
+  source: new ol.source.Vector({
+    url: 'http://localhost:8080/geoserver/wfs?service=WFS&' +
+      'version=2.0.0&request=GetFeature&typeNames=by:allotments&' +
+      'outputFormat=GML3',
+    format: new ol.format.WFS()
+  }),
+	style: style_allotments
 });

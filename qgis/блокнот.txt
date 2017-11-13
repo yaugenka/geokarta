@@ -1,7 +1,57 @@
---найти селькие жилые зоны
-select * from ways2 where tags@>'landuse=>residential' and not tags?'residential'
-and st_isclosed(geom) and st_covers((select geom from country where id=59065),geom)
-and not exists (select * from s where type='г' and (st_covers(s.geom,ways2.geom) or st_crosses(s.geom,ways2.geom)) limit 1)
+--дачи
+select 'w'||id, * from ways2 a where tags@>'landuse=>allotments' and st_covers((select geom from country where id=59065),a.geom)
+and (not exists (select * from s where st_covers(s.geom,a.geom) or st_crosses(s.geom,a.geom)))
+order by tags->'name'
+
+select et||id, * from allotments where name is not null order by name
+
+select 'n'||id, * from nodes2 a where tags@>'place=>allotments'
+and st_covers((select geom from country where id=59065),a.geom)
+and not exists (select * from s where st_covers(s.geom,a.geom))
+and exists (select * from allotments b where st_covers(b.geom,a.geom) and b.name is null)
+order by tags->'name'
+
+--найти различия в отношении и метке
+select 'rel('||r.id||');', 'node('||n.id||');',
+'r'||r.id, 'n'||n.id,
+r.id, n.id,
+r.tags->'name' as name, n.tags->'name' as name2,
+r.tags->'name:be' as name_be, n.tags->'name:be' as name_be2,
+r.tags->'alt_name' as alt_name, n.tags->'alt_name' as alt_name2,
+r.tags->'alt_name:ru' as alt_name_ru, n.tags->'alt_name:ru' as alt_name_ru2,
+r.tags->'alt_name:be' as alt_name_be, n.tags->'alt_name:be' as alt_name_be2,
+r.tags->'name:prefix' as type, n.tags->'name:prefix' as type2,
+r.tags->'addr:region' as region, n.tags->'addr:region' as region2,
+r.tags->'addr:district' as district,  n.tags->'addr:district' as district2,
+r.tags->'addr:subdistrict' as council, n.tags->'addr:subdistrict' as council2,
+r.tags->'place' as place, n.tags->'place' as place2
+from s inner join relations2 r on s.id=r.id inner join relation_members b on r.id=b.relation_id and b.member_role='label' inner join nodes2 n on b.member_id=n.id
+where not r.tags?'alt_name' and n.tags?'alt_name'
+
+select 'r'||r.id, r.*
+from s a inner join relations2 r on a.id=r.id
+where r.tags->'name'!=r.tags->'name:ru'
+where r.tags?'alt_name' and not r.tags?'alt_name:ru'
+
+select 'n'||n.id, n.*
+from s a inner join relation_members b on a.id=b.relation_id and b.member_role='label' inner join nodes2 n on b.member_id=n.id
+where n.tags->'alt_name'!=n.tags->'alt_name:ru'
+where n.tags?'alt_name' and not n.tags?'alt_name:ru'
+
+with t as (select a.id, d.k, d.v from relations a
+inner join relation_members b on a.id=b.relation_id and b.member_role='label'
+inner join nodes c on b.member_id=c.id
+inner join node_tags d on c.id=d.node_id
+where d.k='name:be')
+select * from t
+--insert into relation_tags select * from t
+
+with t as (select b.member_id, f.k, f.v from relations a
+inner join relation_members b on a.id=b.relation_id and b.member_role='label'
+inner join relation_tags f on a.id=f.relation_id
+where f.k='addr:region')
+select * from t
+--insert into node_tags select * from t
 
 --найти чего нет на osm
 with t as (select *, name||' '||district from f where ex=1 and map=1 and

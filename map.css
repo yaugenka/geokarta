@@ -7,23 +7,24 @@ html, body, #map {
   position: fixed;
   top: 20px;
   right: 200px;
+	width: 90px;
 }
 #ltree {
   position: fixed;
   top: 60px;
   right: 119px;
-  width: 150px;
 }
 #ibutton {
   position: fixed;
   top: 20px;
   right: 100px;
+	width: 90px;
 }
 #itree {
   position: fixed;
   top: 60px;
   right: 26px;
-  width: 150px;
+  width: 130px;
 }
 #clickme {
   position: fixed;

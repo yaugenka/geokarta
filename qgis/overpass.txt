@@ -7,6 +7,17 @@
 out meta;
 
 [out:xml];
+((
+//ways
+);>;
+(
+//nodes
+)->.a;
+rel(bn.a:'label');
+);
+out meta;
+
+[out:xml];
 area[name="Беларусь"]->.a;
 (
 rel(area.a)[place][landuse=residential];
